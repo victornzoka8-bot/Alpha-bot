@@ -3,267 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alpha Bot - No Server</title>
+<title>OH Bot - Gemini Free</title>
 <style>
-*{box-sizing:border-box} body{font-family:system-ui,Arial;margin:0;background:#0f172a;color:#e2e8f0;padding:12px}
-h1{font-size:22px;margin:6px 0} .card{background:#1e293b;border-radius:12px;padding:14px;margin:10px 0}
-input,textarea,select{width:100%;padding:11px;border-radius:8px;border:1px solid #334155;background:#0f172a;color:white;margin:6px 0}
-button{background:#22c55e;color:#000;font-weight:700;border:0;padding:12px 16px;border-radius:10px;width:100%;margin:6px 0;cursor:pointer}
-button.stop{background:#ef4444;color:white} button.secondary{background:#38bdf8}
-.tabs{display:flex;gap:6px;flex-wrap:wrap} .tab{flex:1;background:#334155;padding:10px;text-align:center;border-radius:10px;cursor:pointer;font-size:13px}
-.tab.active{background:#22c55e;color:#000;font-weight:700} .hide{display:none}
-pre{white-space:pre-wrap;background:#020617;padding:10px;border-radius:8px;font-size:12px;overflow:auto}
-.small{font-size:12px;color:#94a3b8} .good{color:#22c55e} .bad{color:#f87171}
-table{width:100%;font-size:12px;border-collapse:collapse} td,th{border:1px solid #334155;padding:6px;text-align:left}
+body{background:#0f172a;color:#fff;font-family:Arial;padding:12px;margin:0}
+h1{font-size:20px;text-align:center}
+.card{background:#1e293b;padding:14px;border-radius:12px;margin:10px 0}
+input,textarea,select{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:0;box-sizing:border-box}
+button{width:100%;padding:12px;border:0;border-radius:8px;font-weight:bold;margin:6px 0;cursor:pointer}
+.blue{background:#2563eb;color:#fff}.green{background:#16a34a;color:#fff}.red{background:#dc2626;color:#fff}.orange{background:#f97316;color:#fff}
+#log{background:#000;padding:10px;border-radius:8px;white-space:pre-wrap;font-size:13px;max-height:400px;overflow:auto}
+.alpha{background:#020617;padding:10px;border-radius:8px;margin:6px 0;font-size:13px;word-break:break-word}
+small{color:#94a3b8}
 </style>
 </head>
 <body>
-<h1>Alpha Researcher Bot</h1>
-<p class="small">Inspect first. Research first. Simulate safely. No server. Runs on GitHub Pages. Data saved on your phone.</p>
+<h1>🤖 OH Bot - Gemini FREE</h1>
 
 <div class="card">
-<h3>Login - Saved on phone only</h3>
-<input id="email" placeholder="BRAIN Email">
-<input id="pass" type="password" placeholder="BRAIN Password">
-<input id="okey" type="password" placeholder="OpenAI API Key">
-<select id="region"><option>USA</option><option>EUR</option><option>ASI</option><option>CHN</option></select>
-<label>How many to simulate? <span id="targetLabel">50</span></label>
-<input id="target" type="range" min="10" max="100" value="50" oninput="document.getElementById('targetLabel').innerText=this.value">
-<button onclick="saveLogin()">Save Login</button>
-<p class="small" id="loginStatus">Not saved yet.</p>
+<b>1. Login - Gemini Key</b><br><small>Paste key that starts with AIza... No $5 needed.</small>
+<input id="apiKey" type="password" placeholder="Paste Gemini API Key AIza...">
+<input id="wqUser" type="text" placeholder="WorldQuant Username / Email" value="victornzoka8@gmail.com">
+<input id="wqPass" type="password" placeholder="WorldQuant Password">
+<button class="blue" onclick="saveLogin()">Save Login</button>
+<div id="loginStatus"></div>
 </div>
 
-<div class="tabs">
-<div class="tab active" onclick="showTab(1,this)">1. Inspect</div>
-<div class="tab" onclick="showTab(2,this)">2. Research</div>
-<div class="tab" onclick="showTab(3,this)">3. Run 10H Bot</div>
-<div class="tab" onclick="showTab(4,this)">4. Results</div>
+<div class="card">
+<b>2. Research Note</b><br><small>Paste any idea, bot will expand it with Gemini.</small>
+<textarea id="ideaInput" rows="3">Analyst revisions lead price, but market underreacts in small caps with low analyst coverage</textarea>
+<button class="orange" onclick="genResearch()">Generate Research Note</button>
+<div id="researchOut"></div>
 </div>
 
-<div id="tab1" class="card">
-<h3>1. Inspect Your Submitted Alphas</h3>
-<p class="small">This teaches the bot what NOT to repeat.</p>
-<button onclick="inspect()">Pull My 300 Alphas</button>
-<div id="inspectOut"></div>
+<div class="card">
+<b>3. Run OH Bot</b><br><small>Bot will generate 50 alphas from your idea.</small>
+<textarea id="runIdea" rows="2">Analyst revisions lead price, but market underreacts in small caps with low analyst coverage</textarea>
+<button class="green" onclick="startBot()">Start Bot</button>
+<button class="red" onclick="stopBot()">Stop Bot</button>
+<button class="blue" onclick="clearResults()">Clear Saved Results</button>
+<div id="progress"></div>
 </div>
 
-<div id="tab2" class="card hide">
-<h3>2. Research Before Writing</h3>
-<textarea id="idea" rows="4" placeholder="Example: Analyst revisions lead price, but market underreacts in small caps"></textarea>
-<button onclick="research()">Generate Research Note</button>
-<pre id="researchOut">No research yet.</pre>
-</div>
-
-<div id="tab3" class="card hide">
-<h3>3. Run Bot Safely - 1 per 6 min</h3>
-<p class="small">Safe speed: 100 in 10 hours. No limit hit. Checkpoint saves after each sim.</p>
-<button onclick="startBot()">Start Bot</button>
-<button class="stop" onclick="stopBot()">Stop Bot</button>
-<button class="secondary" onclick="clearAll()">Clear Saved Results</button>
-<div id="botStatus"></div>
-<div id="botLog"></div>
-</div>
-
-<div id="tab4" class="card hide">
-<h3>4. Results</h3>
-<button class="secondary" onclick="renderResults()">Refresh Results</button>
-<button onclick="downloadJSON()">Download JSON</button>
-<div id="resultsOut"></div>
+<div class="card">
+<b>4. Results</b>
+<div id="log">Ready. Paste Gemini key, tap Save Login, then Start Bot.</div>
 </div>
 
 <script>
-const KNOWLEDGE = `GOLDEN RULES: Always use group_neutralize or group_rank. Decay 3 to 10, truncation 0.08, delay 1, pasteurization ON. Target Sharpe over 1.4, Fitness over 0.8, Turnover under 0.70. AVOID ts_corr, ts_cov, ts_mean(close). USE MORE: sentiment, news_sentiment, analyst_rating, analyst_revision, sales, roa, debt_to_equity, book_value, pe_ratio, ts_std_dev, vwap. ROTATION: Sentiment -> Fundamental -> Volatility -> Volume -> Mean Reversion -> Momentum.`;
-let history = JSON.parse(localStorage.getItem('alpha_history')||'[]');
-let results = JSON.parse(localStorage.getItem('alpha_results')||'[]');
-let banned = JSON.parse(localStorage.getItem('alpha_banned')||'[]');
-let topOps = JSON.parse(localStorage.getItem('alpha_topOps')||'[]');
-let topFields = JSON.parse(localStorage.getItem('alpha_topFields')||'[]');
-let rareFields = JSON.parse(localStorage.getItem('alpha_rare')||'["sentiment","analyst_rating","sales"]');
-let researchNote = localStorage.getItem('alpha_research')||'';
+let apiKey = localStorage.getItem('gemini_key') || '';
 let running = false;
-let lastFamily = localStorage.getItem('alpha_lastFamily')||'';
-let lastFields = JSON.parse(localStorage.getItem('alpha_lastFields')||'[]');
+let results = [];
+document.getElementById('apiKey').value = apiKey;
+if(apiKey) document.getElementById('loginStatus').innerHTML = '✅ Key saved';
 
-function showTab(n, el){
-  [1,2,3,4].forEach(i=>document.getElementById('tab'+i).classList.add('hide'));
-  document.getElementById('tab'+n).classList.remove('hide');
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  if(n===4) renderResults();
-  if(n===2) document.getElementById('researchOut').innerText = researchNote || 'No research yet.';
-}
 function saveLogin(){
-  localStorage.setItem('brain_email', document.getElementById('email').value);
-  localStorage.setItem('brain_pass', document.getElementById('pass').value);
-  localStorage.setItem('openai_key', document.getElementById('okey').value);
-  document.getElementById('loginStatus').innerText = 'Saved on this phone.';
+  apiKey = document.getElementById('apiKey').value.trim();
+  if(!apiKey){ alert('Paste Gemini key first'); return; }
+  if(!apiKey.startsWith('AIza')){ alert('Wrong key! This key starts with '+apiKey.slice(0,4)+'. Gemini key must start with AIza... Go to aistudio.google.com/apikey and copy the AIza key.'); return; }
+  localStorage.setItem('gemini_key', apiKey);
+  localStorage.setItem('wq_user', document.getElementById('wqUser').value);
+  document.getElementById('loginStatus').innerHTML = '✅ Saved! Key OK - starts with AIza';
 }
-function loadLogin(){
-  document.getElementById('email').value = localStorage.getItem('brain_email')||'';
-  document.getElementById('pass').value = localStorage.getItem('brain_pass')||'';
-  document.getElementById('okey').value = localStorage.getItem('openai_key')||'';
-  if(localStorage.getItem('brain_email')) document.getElementById('loginStatus').innerText = 'Loaded saved login.';
-}
-loadLogin();
 
-async function brainAuth(){
-  const email = localStorage.getItem('brain_email');
-  const pass = localStorage.getItem('brain_pass');
-  const r = await fetch('https://api.worldquantbrain.com/authentication', {method:'POST', headers:{'Authorization':'Basic '+btoa(email+':'+pass)}});
-  if(!r.ok) throw new Error('BRAIN login failed. Check email/password.');
-  return r;
+async function callLLM(prompt){
+  if(!apiKey){ throw new Error('No Gemini key. Paste AIza key and Save Login first.'); }
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  const note = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+  if(!note) throw new Error('Empty reply from Gemini. Raw: ' + JSON.stringify(data).slice(0,300));
+  return note;
 }
-function fingerprint(expr){
-  const ops = (expr.match(/(ts_\w+|group_\w+|rank|delay|decay_linear|zscore)/g)||[]);
-  const fields = (expr.match(/(close|open|high|low|volume|vwap|returns|sentiment|news_sentiment|analyst_rating|analyst_revision|sales|pe_ratio|book_value|roa|cash_flow)/g)||[]);
-  const wins = (expr.match(/,\s*(\d+)\)/g)||[]);
-  return JSON.stringify({ops:[...new Set(ops)].sort(), fields:[...new Set(fields)].sort(), wins:[...new Set(wins)].sort()});
-}
-function similarity(a,b){
-  const fa = JSON.parse(fingerprint(a)); const fb = JSON.parse(fingerprint(b));
-  const xa = new Set([...fa.ops, ...fa.fields, ...fa.wins]);
-  const xb = new Set([...fb.ops, ...fb.fields, ...fb.wins]);
-  const inter = [...xa].filter(x=>xb.has(x)).length;
-  const uni = new Set([...xa, ...xb]).size;
-  return uni ? inter/uni : 0;
-}
-async function askLLM(prompt){
-  const key = localStorage.getItem('openai_key');
-  const r = await fetch('https://api.openai.com/v1/chat/completions', {method:'POST', headers:{'Authorization':'Bearer '+key,'Content-Type':'application/json'}, body:JSON.stringify({model:'gpt-4o-mini', messages:[{role:'user', content:prompt}], max_tokens:900, temperature:0.7})});
-  const j = await r.json();
-  return j.choices[0].message.content;
-}
-async function inspect(){
-  const out = document.getElementById('inspectOut');
-  out.innerHTML = 'Pulling... please wait 20 sec.';
+
+async function genResearch(){
   try{
-    await brainAuth();
-    let all = []; let offset = 0;
-    while(all.length < 300){
-      const email = localStorage.getItem('brain_email'); const pass = localStorage.getItem('brain_pass');
-      const r = await fetch(`https://api.worldquantbrain.com/users/self/alphas?limit=100&offset=${offset}&status=SUBMITTED`, {headers:{'Authorization':'Basic '+btoa(email+':'+pass)}});
-      const j = await r.json(); const data = j.results||[];
-      if(!data.length) break;
-      all = all.concat(data); offset += 100;
-    }
-    history = all.slice(0,300);
-    localStorage.setItem('alpha_history', JSON.stringify(history));
-    const opC={}, fC={}, wC={};
-    history.forEach(a=>{
-      const expr = (a.regular && a.regular.code) || '';
-      const fp = JSON.parse(fingerprint(expr));
-      fp.ops.forEach(o=>opC[o]=(opC[o]||0)+1);
-      fp.fields.forEach(f=>fC[f]=(fC[f]||0)+1);
-      fp.wins.forEach(w=>wC[w]=(wC[w]||0)+1);
-    });
-    const sortC = o => Object.entries(o).sort((a,b)=>b[1]-a[1]);
-    topOps = sortC(opC).slice(0,3).map(x=>x[0]);
-    topFields = sortC(fC).slice(0,2).map(x=>x[0]);
-    rareFields = sortC(fC).slice(-5).map(x=>x[0]);
-    if(!rareFields.length) rareFields = ['sentiment','analyst_rating','sales'];
-    localStorage.setItem('alpha_topOps', JSON.stringify(topOps));
-    localStorage.setItem('alpha_topFields', JSON.stringify(topFields));
-    localStorage.setItem('alpha_rare', JSON.stringify(rareFields));
-    let html = `<p class="good">Pulled ${history.length} alphas</p>`;
-    html += `<b>Top Operators You Overuse - AVOID:</b><br>${sortC(opC).slice(0,10).map(x=>x[0]+': '+x[1]).join('<br>')}<br><br>`;
-    html += `<b>Top Fields You Overuse - AVOID:</b><br>${sortC(fC).slice(0,10).map(x=>x[0]+': '+x[1]).join('<br>')}<br><br>`;
-    html += `<b>Bot Will Now USE MORE:</b><br>${rareFields.join(', ')}`;
-    out.innerHTML = html;
-  }catch(e){ out.innerHTML = '<p class="bad">'+e.message+'</p>'; }
+    document.getElementById('researchOut').innerHTML = 'Generating research...';
+    const idea = document.getElementById('ideaInput').value;
+    const note = await callLLM('Expand this WorldQuant Brain alpha idea into a short research note with hypothesis, data fields, and why it should work. Idea: ' + idea);
+    document.getElementById('researchOut').innerHTML = '<div class="alpha">'+note.replace(/\n/g,'<br>')+'</div>';
+    document.getElementById('runIdea').value = idea;
+  }catch(e){ document.getElementById('researchOut').innerHTML = '❌ '+e.message; }
 }
-async function research(){
-  const idea = document.getElementById('idea').value;
-  if(!idea) return alert('Type your idea first');
-  document.getElementById('researchOut').innerText = 'Researching...';
-  const prompt = `You are a WorldQuant BRAIN researcher. Knowledge: ${KNOWLEDGE} User overuses: ${topOps} and ${topFields}. Rare fields: ${rareFields}. Idea: ${idea}. Write 300 words: 1 Hypothesis 2 Economic reason 3 Why orthogonal to momentum 4 Data family NOT price 5 Neutralization plan 6 Decay plan 7 Three alpha templates with different operators, avoid ts_corr, use group_neutralize.`;
-  try{
-    researchNote = await askLLM(prompt);
-    localStorage.setItem('alpha_research', researchNote);
-    document.getElementById('researchOut').innerText = researchNote;
-  }catch(e){ document.getElementById('researchOut').innerText = 'Error: '+e.message; }
-}
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-function log(msg){ document.getElementById('botLog').innerHTML = '<p>'+msg+'</p>' + document.getElementById('botLog').innerHTML; }
+
+function stopBot(){ running = false; document.getElementById('progress').innerHTML = 'Stopped'; }
+function clearResults(){ results=[]; document.getElementById('log').innerHTML='Cleared. Ready.'; }
+
 async function startBot(){
-  if(running) return;
+  if(!apiKey){ alert('Paste Gemini AIza key first and Save Login'); return; }
   running = true;
-  const target = parseInt(document.getElementById('target').value);
-  const region = document.getElementById('region').value;
-  const email = localStorage.getItem('brain_email'); const pass = localStorage.getItem('brain_pass');
-  const auth = 'Basic '+btoa(email+':'+pass);
-  const FAMILIES = {
-    Sentiment:['sentiment','news_sentiment','analyst_rating','analyst_revision'],
-    Fundamental:['sales','roa','book_value','pe_ratio','cash_flow'],
-    Volatility:['returns'],
-    Volume:['vwap','volume'],
-    'Mean Reversion':['close','returns'],
-    Momentum:['close','returns']
-  };
-  for(let i=results.length; i<target; i++){
+  results = [];
+  const idea = document.getElementById('runIdea').value || document.getElementById('ideaInput').value;
+  const families = ['Momentum','Mean Reversion','Volume','Value','Quality','Volatility','Analyst','Sentiment','Growth','Liquidity'];
+  const fields = ['close','open','volume','vwap','sales','earnings','analyst_rating','market_cap','returns','roe'];
+  document.getElementById('log').innerHTML = 'Starting bot...\n';
+  for(let i=1;i<=50;i++){
     if(!running) break;
-    const fams = Object.keys(FAMILIES);
-    let fam = fams[Math.floor(Math.random()*fams.length)];
-    if(fam===lastFamily) fam = fams[Math.floor(Math.random()*fams.length)];
-    lastFamily = fam; localStorage.setItem('alpha_lastFamily', fam);
-    let field = FAMILIES[fam][Math.floor(Math.random()*FAMILIES[fam].length)];
-    if(Math.random()<0.5) field = rareFields[Math.floor(Math.random()*rareFields.length)];
-    if(lastFields.slice(-2).includes(field)) field = rareFields[Math.floor(Math.random()*rareFields.length)];
-    lastFields.push(field); localStorage.setItem('alpha_lastFields', JSON.stringify(lastFields));
-    const histSample = history.slice(-10).map(h=>(h.regular&&h.regular.code)||'').join('\n');
-    const genPrompt = `Knowledge: ${KNOWLEDGE} Research: ${researchNote} Family: ${fam}. Must use field: ${field}. Avoid operators: ${topOps}. Avoid fields: ${topFields}. Banned: ${banned.slice(0,3)}. Last 10 alphas DO NOT REPEAT: ${histSample}. Write ONE WorldQuant BRAIN REGULAR alpha expression only. No explanation. No markdown. Must start with group_neutralize or group_rank. Decay 3 to 8. Sector neutralization. Different operator and window than last alphas.`;
-    document.getElementById('botStatus').innerText = `Generating ${i+1}/${target} Family ${fam} Field ${field}...`;
-    let expr = '';
-    try{ expr = (await askLLM(genPrompt)).replace(/```/g,'').replace(/python/g,'').trim(); }catch(e){ log('LLM error '+e.message); await sleep(5000); continue; }
-    expr = expr.split('\n').join(' ').trim();
-    if(banned.includes(fingerprint(expr))){ log('Skipped banned: '+expr); continue; }
-    let maxSim = 0;
-    history.slice(-50).forEach(h=>{ const c=(h.regular&&h.regular.code)||''; if(c) maxSim=Math.max(maxSim, similarity(expr,c)); });
-    if(maxSim>0.60){ log(`Skipped too similar ${maxSim.toFixed(2)}: ${expr}`); continue; }
-    log(`Sim ${i+1}/${target} ${fam} - ${expr} - Local sim ${maxSim.toFixed(2)}`);
-    const decay = [3,5,8][Math.floor(Math.random()*3)];
-    const alpha = {type:'REGULAR', settings:{instrumentType:'EQUITY', region, universe:'TOP3000', delay:1, decay, neutralization:'SECTOR', truncation:0.08, pasteurization:'ON', unitHandling:'VERIFY', nanHandling:'ON', maxTrade:'ON', commission:'ON', visualization:false}, regular:expr};
+    const fam = families[i % families.length];
+    const fld = fields[i % fields.length];
+    document.getElementById('progress').innerHTML = 'Generating '+i+'/50 Family '+fam+' Field '+fld+'...';
     try{
-      const sr = await fetch('https://api.worldquantbrain.com/simulations', {method:'POST', headers:{Authorization:auth,'Content-Type':'application/json'}, body:JSON.stringify(alpha)});
-      const sj = await sr.json(); const simId = sj.id;
-      let prog = {};
-      for(let k=0;k<30;k++){ const gr = await fetch(`https://api.worldquantbrain.com/simulations/${simId}`, {headers:{Authorization:auth}}); prog = await gr.json(); if(prog.status==='COMPLETE') break; await sleep(10000); }
-      const sharpe = (prog.is && prog.is.sharpe) || 0;
-      let maxCorr = 0;
-      if(prog.alpha){
-        const cr = await fetch(`https://api.worldquantbrain.com/alphas/${prog.alpha}/correlations?limit=5`, {headers:{Authorization:auth}});
-        const cj = await cr.json(); const arr = cj.results||[];
-        if(arr.length) maxCorr = Math.max(...arr.map(c=>c.correlation||0));
-      }
-      if(maxCorr>0.70){ banned.push(fingerprint(expr)); localStorage.setItem('alpha_banned', JSON.stringify(banned)); log(`Rejected BRAIN corr ${maxCorr.toFixed(2)} - banned fingerprint`); }
-      else{
-        results.push({expr, family:fam, sharpe, corr:maxCorr, sim:maxSim, time:new Date().toString()});
-        localStorage.setItem('alpha_results', JSON.stringify(results));
-        log(`Saved: Sharpe ${sharpe.toFixed(2)} Corr ${maxCorr.toFixed(2)} | ${expr}`);
-      }
-    }catch(e){ log('Sim error '+e.message); }
-    for(let s=360; s>0; s--){
-      if(!running) break;
-      document.getElementById('botStatus').innerText = `Cooling down ${s}s before next sim to avoid limit... Saved: ${results.length}`;
-      await sleep(1000);
+      const alpha = await callLLM('Create ONE WorldQuant Brain alpha expression only. Family: '+fam+', Field: '+fld+', Idea: '+idea+'. Return only the alpha code like: rank(...) or -ts_rank(...). No explanation, just code in one line.');
+      results.push({i, fam, fld, alpha: alpha.trim()});
+      document.getElementById('log').innerHTML += '\n✅ '+i+'/50 ['+fam+'] '+alpha.trim().slice(0,120);
+    }catch(e){
+      document.getElementById('log').innerHTML += '\n❌ LLM error '+e.message;
+      // wait 2 sec and continue, don't crash
+      await new Promise(r=>setTimeout(r,2000));
     }
+    document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+    await new Promise(r=>setTimeout(r,500));
   }
-  document.getElementById('botStatus').innerText = 'Bot finished or stopped. Check Results.';
-  running = false;
+  document.getElementById('progress').innerHTML = 'Done! Generated '+results.length+' alphas.';
+  document.getElementById('log').innerHTML += '\n\n=== ALL ALPHAS ===\n' + results.map(r=>r.i+'. ['+r.fam+'] '+r.alpha).join('\n');
 }
-function stopBot(){ running = false; document.getElementById('botStatus').innerText='Stopped by you. Results saved.'; }
-function clearAll(){ if(confirm('Clear all saved results?')){ results=[]; localStorage.setItem('alpha_results','[]'); renderResults(); } }
-function renderResults(){
-  const out = document.getElementById('resultsOut');
-  if(!results.length){ out.innerHTML='No results yet.'; return; }
-  let h = `<p>Total saved: ${results.length}</p><table><tr><th>#</th><th>Family</th><th>Sharpe</th><th>Corr</th><th>Expr</th></tr>`;
-  results.forEach((r,i)=>{ h+=`<tr><td>${i+1}</td><td>${r.family}</td><td>${(r.sharpe||0).toFixed(2)}</td><td>${(r.corr||0).toFixed(2)}</td><td>${r.expr}</td></tr>`; });
-  h+='</table>'; out.innerHTML=h;
-}
-function downloadJSON(){
-  const blob = new Blob([JSON.stringify(results,null,2)], {type:'application/json'});
-  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='alphas.json'; a.click();
-}
-renderResults();
 </script>
 </body>
 </html>
