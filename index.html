@@ -8,125 +8,90 @@
 body{background:#0f172a;color:#fff;font-family:Arial;padding:12px;margin:0}
 h1{font-size:20px;text-align:center}
 .card{background:#1e293b;padding:14px;border-radius:12px;margin:10px 0}
-input,textarea,select{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:0;box-sizing:border-box}
+input,textarea{width:100%;padding:10px;margin:6px 0;border-radius:8px;border:0;box-sizing:border-box}
 button{width:100%;padding:12px;border:0;border-radius:8px;font-weight:bold;margin:6px 0;cursor:pointer}
 .blue{background:#2563eb;color:#fff}.green{background:#16a34a;color:#fff}.red{background:#dc2626;color:#fff}.orange{background:#f97316;color:#fff}
 #log{background:#000;padding:10px;border-radius:8px;white-space:pre-wrap;font-size:13px;max-height:400px;overflow:auto}
-.alpha{background:#020617;padding:10px;border-radius:8px;margin:6px 0;font-size:13px;word-break:break-word}
 small{color:#94a3b8}
 </style>
 </head>
 <body>
 <h1>🤖 OH Bot - Gemini FREE</h1>
-
 <div class="card">
-<b>1. Login - Gemini Key</b><br><small>Paste key that starts with AQ. or AIza... Both work now.</small>
-<input id="apiKey" type="password" placeholder="Paste Gemini API Key AQ. or AIza...">
-<input id="wqUser" type="text" placeholder="WorldQuant Username / Email" value="victornzoka8@gmail.com">
+<b>1. Login - Gemini Key</b><br><small>Paste your AQ. key from AI Studio</small>
+<input id="apiKey" type="password" placeholder="Paste Gemini API Key AQ...">
+<input id="wqUser" type="text" placeholder="WorldQuant Email" value="victornzoka8@gmail.com">
 <input id="wqPass" type="password" placeholder="WorldQuant Password">
 <button class="blue" onclick="saveLogin()">Save Login</button>
 <div id="loginStatus"></div>
 </div>
-
 <div class="card">
-<b>2. Research Note</b><br><small>Paste any idea, bot will expand it with Gemini.</small>
+<b>2. Idea</b>
 <textarea id="ideaInput" rows="3">Analyst revisions lead price, but market underreacts in small caps with low analyst coverage</textarea>
 <button class="orange" onclick="genResearch()">Generate Research Note</button>
 <div id="researchOut"></div>
 </div>
-
 <div class="card">
-<b>3. Run OH Bot</b><br><small>Bot will generate 50 alphas from your idea.</small>
+<b>3. Run OH Bot</b>
 <textarea id="runIdea" rows="2">Analyst revisions lead price, but market underreacts in small caps with low analyst coverage</textarea>
 <button class="green" onclick="startBot()">Start Bot</button>
 <button class="red" onclick="stopBot()">Stop Bot</button>
-<button class="blue" onclick="clearResults()">Clear Saved Results</button>
 <div id="progress"></div>
 </div>
-
-<div class="card">
-<b>4. Results</b>
-<div id="log">Ready. Paste Gemini key, tap Save Login, then Start Bot.</div>
-</div>
-
+<div class="card"><b>4. Results</b><div id="log">Ready. Paste key, Save Login, Start Bot.</div></div>
 <script>
 let apiKey = localStorage.getItem('gemini_key') || '';
 let running = false;
 let results = [];
 document.getElementById('apiKey').value = apiKey;
 if(apiKey) document.getElementById('loginStatus').innerHTML = '✅ Key saved';
-
 function saveLogin(){
   apiKey = document.getElementById('apiKey').value.trim();
   if(!apiKey){ alert('Paste Gemini key first'); return; }
-  if(!apiKey.startsWith('AIza') && !apiKey.startsWith('AQ.')){
-    alert('Wrong key! Must start with AQ. or AIza... You pasted: ' + apiKey.slice(0,5));
-    return;
-  }
   localStorage.setItem('gemini_key', apiKey);
-  localStorage.setItem('wq_user', document.getElementById('wqUser').value);
   document.getElementById('loginStatus').innerHTML = '✅ Saved! Key OK - ' + apiKey.slice(0,5);
 }
-
 async function callLLM(prompt){
-  if(!apiKey){ throw new Error('No Gemini key. Paste AQ. key and Save Login first.'); }
-  const isAQ = apiKey.startsWith('AQ.');
-  const url = isAQ
-    ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
-    : 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
-  const headers = { 'Content-Type': 'application/json' };
-  if(isAQ) headers['Authorization'] = 'Bearer ' + apiKey;
-  const res = await fetch(url, {
+  if(!apiKey) throw new Error('No key. Paste and Save Login first.');
+  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
     method: 'POST',
-    headers: headers,
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
   });
   const data = await res.json();
   if(data.error) throw new Error(data.error.message);
   const note = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-  if(!note) throw new Error('Empty reply from Gemini. Raw: ' + JSON.stringify(data).slice(0,300));
+  if(!note) throw new Error('Empty reply: ' + JSON.stringify(data).slice(0,300));
   return note;
 }
-
 async function genResearch(){
   try{
-    document.getElementById('researchOut').innerHTML = 'Generating research...';
-    const idea = document.getElementById('ideaInput').value;
-    const note = await callLLM('Expand this WorldQuant Brain alpha idea into a short research note with hypothesis, data fields, and why it should work. Idea: ' + idea);
-    document.getElementById('researchOut').innerHTML = '<div class="alpha">'+note.replace(/\n/g,'<br>')+'</div>';
-    document.getElementById('runIdea').value = idea;
+    document.getElementById('researchOut').innerHTML = 'Generating...';
+    const note = await callLLM('Expand this WorldQuant alpha idea into a short research note: ' + document.getElementById('ideaInput').value);
+    document.getElementById('researchOut').innerHTML = note.replace(/\n/g,'<br>');
   }catch(e){ document.getElementById('researchOut').innerHTML = '❌ '+e.message; }
 }
-
 function stopBot(){ running = false; document.getElementById('progress').innerHTML = 'Stopped'; }
-function clearResults(){ results=[]; document.getElementById('log').innerHTML='Cleared. Ready.'; }
-
 async function startBot(){
-  if(!apiKey){ alert('Paste Gemini AQ. key first and Save Login'); return; }
-  running = true;
-  results = [];
-  const idea = document.getElementById('runIdea').value || document.getElementById('ideaInput').value;
+  if(!apiKey){ alert('Paste key first'); return; }
+  running = true; results = [];
+  const idea = document.getElementById('runIdea').value;
   const families = ['Momentum','Mean Reversion','Volume','Value','Quality','Volatility','Analyst','Sentiment','Growth','Liquidity'];
-  const fields = ['close','open','volume','vwap','sales','earnings','analyst_rating','market_cap','returns','roe'];
   document.getElementById('log').innerHTML = 'Starting bot...\n';
   for(let i=1;i<=50;i++){
     if(!running) break;
     const fam = families[i % families.length];
-    const fld = fields[i % fields.length];
-    document.getElementById('progress').innerHTML = 'Generating '+i+'/50 Family '+fam+' Field '+fld+'...';
+    document.getElementById('progress').innerHTML = 'Generating '+i+'/50 - '+fam;
     try{
-      const alpha = await callLLM('Create ONE WorldQuant Brain alpha expression only. Family: '+fam+', Field: '+fld+', Idea: '+idea+'. Return only the alpha code like: rank(...) or -ts_rank(...). No explanation, just code in one line.');
-      results.push({i, fam, fld, alpha: alpha.trim()});
+      const alpha = await callLLM('Create ONE WorldQuant Brain alpha expression only. Family: '+fam+'. Idea: '+idea+'. Return only alpha code like rank(close, 20). No explanation.');
+      results.push(alpha.trim());
       document.getElementById('log').innerHTML += '\n✅ '+i+'/50 ['+fam+'] '+alpha.trim().slice(0,120);
-    }catch(e){
-      document.getElementById('log').innerHTML += '\n❌ LLM error '+e.message;
-      await new Promise(r=>setTimeout(r,2000));
-    }
+    }catch(e){ document.getElementById('log').innerHTML += '\n❌ '+e.message; await new Promise(r=>setTimeout(r,2000)); }
     document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
     await new Promise(r=>setTimeout(r,500));
   }
-  document.getElementById('progress').innerHTML = 'Done! Generated '+results.length+' alphas.';
-  document.getElementById('log').innerHTML += '\n\n=== ALL ALPHAS ===\n' + results.map(r=>r.i+'. ['+r.fam+'] '+r.alpha).join('\n');
+  document.getElementById('progress').innerHTML = 'Done! '+results.length+' alphas.';
+  document.getElementById('log').innerHTML += '\n\n=== ALL ALPHAS ===\n' + results.map((a,i)=>(i+1)+'. '+a).join('\n');
 }
 </script>
 </body>
