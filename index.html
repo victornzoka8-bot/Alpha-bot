@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OH Bot - Gemini Free</title>
+<title>OH Bot - Gemini FREE</title>
 <style>
 body{background:#0f172a;color:#fff;font-family:Arial;padding:12px;margin:0}
 h1{font-size:20px;text-align:center}
@@ -20,8 +20,8 @@ small{color:#94a3b8}
 <h1>🤖 OH Bot - Gemini FREE</h1>
 
 <div class="card">
-<b>1. Login - Gemini Key</b><br><small>Paste key that starts with AIza... No $5 needed.</small>
-<input id="apiKey" type="password" placeholder="Paste Gemini API Key AIza...">
+<b>1. Login - Gemini Key</b><br><small>Paste key that starts with AQ. or AIza... Both work now.</small>
+<input id="apiKey" type="password" placeholder="Paste Gemini API Key AQ. or AIza...">
 <input id="wqUser" type="text" placeholder="WorldQuant Username / Email" value="victornzoka8@gmail.com">
 <input id="wqPass" type="password" placeholder="WorldQuant Password">
 <button class="blue" onclick="saveLogin()">Save Login</button>
@@ -59,17 +59,26 @@ if(apiKey) document.getElementById('loginStatus').innerHTML = '✅ Key saved';
 function saveLogin(){
   apiKey = document.getElementById('apiKey').value.trim();
   if(!apiKey){ alert('Paste Gemini key first'); return; }
-  if(!apiKey.startsWith('AIza')){ alert('Wrong key! This key starts with '+apiKey.slice(0,4)+'. Gemini key must start with AIza... Go to aistudio.google.com/apikey and copy the AIza key.'); return; }
+  if(!apiKey.startsWith('AIza') && !apiKey.startsWith('AQ.')){
+    alert('Wrong key! Must start with AQ. or AIza... You pasted: ' + apiKey.slice(0,5));
+    return;
+  }
   localStorage.setItem('gemini_key', apiKey);
   localStorage.setItem('wq_user', document.getElementById('wqUser').value);
-  document.getElementById('loginStatus').innerHTML = '✅ Saved! Key OK - starts with AIza';
+  document.getElementById('loginStatus').innerHTML = '✅ Saved! Key OK - ' + apiKey.slice(0,5);
 }
 
 async function callLLM(prompt){
-  if(!apiKey){ throw new Error('No Gemini key. Paste AIza key and Save Login first.'); }
-  const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey, {
+  if(!apiKey){ throw new Error('No Gemini key. Paste AQ. key and Save Login first.'); }
+  const isAQ = apiKey.startsWith('AQ.');
+  const url = isAQ
+    ? 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent'
+    : 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + apiKey;
+  const headers = { 'Content-Type': 'application/json' };
+  if(isAQ) headers['Authorization'] = 'Bearer ' + apiKey;
+  const res = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: headers,
     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
   });
   const data = await res.json();
@@ -93,7 +102,7 @@ function stopBot(){ running = false; document.getElementById('progress').innerHT
 function clearResults(){ results=[]; document.getElementById('log').innerHTML='Cleared. Ready.'; }
 
 async function startBot(){
-  if(!apiKey){ alert('Paste Gemini AIza key first and Save Login'); return; }
+  if(!apiKey){ alert('Paste Gemini AQ. key first and Save Login'); return; }
   running = true;
   results = [];
   const idea = document.getElementById('runIdea').value || document.getElementById('ideaInput').value;
@@ -111,7 +120,6 @@ async function startBot(){
       document.getElementById('log').innerHTML += '\n✅ '+i+'/50 ['+fam+'] '+alpha.trim().slice(0,120);
     }catch(e){
       document.getElementById('log').innerHTML += '\n❌ LLM error '+e.message;
-      // wait 2 sec and continue, don't crash
       await new Promise(r=>setTimeout(r,2000));
     }
     document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
